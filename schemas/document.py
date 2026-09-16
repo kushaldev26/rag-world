@@ -11,7 +11,7 @@ class SourceInfo(BaseModel):
   title: str | None = None   # doc title / page title / filename
   ingested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-
+  position: int = 0
   # Optinal, source-specific
   extra: dict = Field(default_factory=dict)
   # e.g. for code: {"repo_name": "...", "commit_hash": "...", "language": "python"}
@@ -22,6 +22,5 @@ class SourceInfo(BaseModel):
 class Chunk(BaseModel):
   id: str
   content: str
-  chunk_index: int = 0
   source: SourceInfo
 
