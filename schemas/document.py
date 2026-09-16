@@ -6,7 +6,7 @@ from rich import print
 class SourceInfo(BaseModel):
   """Where this chunk came from - generic across source types. """
   
-  source_type: Literal["code_repo","pdf","web_page","markdown","text_file","docs","other"]
+  source_type: Literal["code_repo","pdf","web_page","markdown","text_file","docx","other"]
   source_id: str  # file path, URL, repo name — whatever identifies the origin
   title: str | None = None   # doc title / page title / filename
   ingested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

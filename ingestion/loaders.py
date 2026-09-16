@@ -18,10 +18,11 @@ logger = logging.getLogger("RAG_pipeline")
 EXTENSION_MAP = {
     ".txt" : ("text_file",TextLoader),
     ".pdf" : ("pdf",PyPDFLoader),
-    ".docs": ("docs",Docx2txtLoader),
+    ".docx": ("docx",Docx2txtLoader),
     ".md"  : ("markdown",UnstructuredMarkdownLoader)
 }
 
+# load file and check the is exits extension  
 def get_loader_for_file(file_path: str):
 
     # Get Extionsion of file
@@ -33,6 +34,8 @@ def get_loader_for_file(file_path: str):
     source_type, loader_cls = EXTENSION_MAP[ext]
     return source_type, loader_cls(file_path) 
 
+
+# load and direct Chunking
 def load_and_chunk_file(file_path: str) -> list[Chunk]:
     source_type, loader = get_loader_for_file(file_path)
     docs = loader.load()
@@ -43,11 +46,23 @@ def load_and_chunk_file(file_path: str) -> list[Chunk]:
 
     return _split_into_chunks(docs,source_type,source_id=file_path)
 
+
+# load URL and chunking 
 def load_and_chunk_url(url: str) -> list[Chunk]:
     loader = WebBaseLoader(url)
     docs = loader.load()
     return _split_into_chunks(docs,"web_page",source_id=url)
 
+
+# load Directory and chunking
+def ingest_directory(dir_path: str) -> list[Chunk]:
+    # store all chunks
+    all_chunks = []
+
+    for file_path in Path(dir_path).rglob("*"):
+        if file_path.is_file() and file_path.suffix.lower() in EXTENSION_MAP:
+            all_chunks.extend(load_and_chunk_file(str(file_path)))
+    return all_chunks
 
 def _split_into_chunks(docs: list[Document], source_type: str, source_id: str) -> list[Chunk]:
     splitter = RecursiveCharacterTextSplitter(chunk_size=800,chunk_overlap=100)
