@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 import uuid
+import hashlib
 
 from langchain_community.document_loaders import (
     TextLoader,
@@ -21,6 +22,11 @@ EXTENSION_MAP = {
     ".docx": ("docx",Docx2txtLoader),
     ".md"  : ("markdown",UnstructuredMarkdownLoader)
 }
+
+# make chunk id in hash for help duplicate handle
+def _make_chunk_id(source_id: str, position: int, content: str) -> str:
+    raw = f"{source_id}:{position}:{content}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 # load file and check the is exits extension  
 def get_loader_for_file(file_path: str):
@@ -71,17 +77,20 @@ def _split_into_chunks(docs: list[Document], source_type: str, source_id: str) -
     chunks = []
 
     for i, doc in enumerate(split_docs):
+
+        # extra meta data
         extra_info = {
                 **{k:v for k,v in (doc.metadata.copy() if doc.metadata else {}).items() if k not in ["page","source"]}
-            }
+        }
+        # store main content
         chunks.append(
             Chunk(
-                id=str(uuid.uuid4()),
+                id=_make_chunk_id(source_id,i,doc.page_content),
                 content=doc.page_content,
                 source=SourceInfo(
                     source_type=source_type,
                     source_id=source_id,
-                    position=doc.metadata.get("page",i),
+                    position=i,
                     extra= extra_info,
                 )
             )
